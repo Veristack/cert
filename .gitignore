@@ -99,3 +99,5 @@ output-ubuntu-16.10-amd64-virtualbox-iso
 
 # Visual Studio Folder
 .vscode/
+
+*.egg-info

@@ -12,7 +12,6 @@ help: ## Display callable targets.
 .PHONY: develop
 develop: ## Display callable targets.
 	virtualenv -p python3 venv
-	. venv/bin/activate
-	pip install -r requirements.txt
-	pip install --editable .
-	python
+	venv/bin/pip install -r requirements.txt
+	venv/bin/pip install --editable .
+	venv/bin/python
