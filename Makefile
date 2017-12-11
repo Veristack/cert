@@ -13,6 +13,6 @@ help: ## Display callable targets.
 develop: ## Display callable targets.
 	virtualenv -p python3 venv
 	. venv/bin/activate
-	pip instal -r requirements.txt
+	pip install -r requirements.txt
 	pip install --editable .
 	python
