@@ -1,0 +1,101 @@
+### OSX ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+### SublimeText ###
+# cache files for sublime text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+
+# workspace files are user-specific
+*.sublime-workspace
+
+# project files should be checked into the repository, unless a significant
+# proportion of contributors will probably not be using SublimeText
+# *.sublime-project
+
+# sftp configuration file
+sftp-config.json
+
+# Basics
+*.py[cod]
+__pycache__
+.cache
+.mypy_cache
+
+# Logs
+logs
+*.log
+!smash.log
+pip-log.txt
+npm-debug.log*
+
+# Unit test / coverage reports
+coverage/
+.coverage
+.tox
+coverage.xml
+tests.xml
+htmlcov
+
+# Translations
+*.mo
+*.pot
+
+# Pycharm
+.idea/*
+
+
+# Vim
+
+*~
+*.swp
+*.swo
+
+# npm
+node_modules/
+
+# Compass
+.sass-cache
+
+# virtual environments
+!.env
+
+# User-uploaded media
+web/audittrail/media/
+
+
+db
+staticfiles/
+
+# Documentation
+docs/_build
+docs/_autosummary
+
+# Virtual Enviroments
+venv
+env
+
+# sphinx doc folders
+_build
+_autosummary
+
+# Vagrant files
+.vagrant
+
+# Docker registry files
+docker-registry/data/docker/registry/v2
+
+.vs
+
+# Linter configs
+.jshintrc
+
+# Packer
+packer_cache
+output-ubuntu-16.10-amd64-virtualbox-iso
+
+# Visual Studio Folder
+.vscode/
