@@ -100,14 +100,8 @@ def load_certificate(f, passphrase=None):
     return (key, cert), write_cert(key, cert, True)
 
 
-def ca_certificate(country, state, city, org, org_name, common):
-    """
-    Generate a certificate authority certificate.
-
-    Creates a CA cert for the proxy to use when bumping SSL. This certificate
-    is also used to sign an SSL server certificate for the proxy web interface.
-    This leverages the trust that must be in place for the ca certificate.
-    """
+def certificate(country, state, city, org, org_name, common, ca_cert=False):
+    """Generate a certificate."""
     key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
@@ -130,12 +124,41 @@ def ca_certificate(country, state, city, org, org_name, common):
         .not_valid_before(datetime.utcnow())\
         .not_valid_after(datetime.utcnow() + timedelta(days=3650))\
         .add_extension(x509.SubjectAlternativeName([x509.DNSName(common)]),
-                       critical=False)\
-        .add_extension(x509.BasicConstraints(ca=True, path_length=1),
-                       critical=True)\
-        .sign(key, hashes.SHA256(), default_backend())
+                       critical=False)
+
+    if ca_cert:
+        cert.add_extension(
+            x509.BasicConstraints(
+                ca=True,
+                path_length=1
+            ),
+            critical=True
+        )
+    cert.sign(key, hashes.SHA256(), default_backend())
 
     return (key, cert), write_cert(key, cert, True)
+
+
+def ss_certificate(country, state, city, org, org_name, common):
+    """
+    Generate a self signed certificate.
+
+    Creates a self signed cert for the proxy to use when bumping SSL. This
+    certificate is also used to sign an SSL server certificate for the web
+    interface.
+    """
+    certificate(country, state, city, org, org_name, common, ca_cert=False)
+
+
+def ca_certificate(country, state, city, org, org_name, common):
+    """
+    Generate a certificate authority certificate.
+
+    Creates a CA cert for the proxy to use when bumping SSL. This certificate
+    is also used to sign an SSL server certificate for the proxy web interface.
+    This leverages the trust that must be in place for the ca certificate.
+    """
+    certificate(country, state, city, org, org_name, common, ca_cert=True)
 
 
 def server_certificate(ca_key, ca_cert, common=None):
