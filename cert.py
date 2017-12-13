@@ -63,10 +63,6 @@ def save_key(fobj, key, format='key'):
         key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.TraditionalOpenSSL,
-            # TODO: squid can support a passphrase using sslpassword_program
-            # config, but we would need to modify the config template and
-            # generate as script to provide the passphrase. I am not sure how
-            # secure that would be.
             encryption_algorithm=serialization.NoEncryption()
         )
     )
@@ -157,6 +153,7 @@ def server_certificate(ca_key, ca_cert, common=None):
         if l:
             return l[0].value
 
+    attributes = []
     for oid in (
             NameOID.COUNTRY_NAME, NameOID.STATE_OR_PROVINCE_NAME,
             NameOID.LOCALITY_NAME, NameOID.ORGANIZATION_NAME,
