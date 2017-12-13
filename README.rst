@@ -1,4 +1,4 @@
-.. image:: https://veristack.com/wp-content/uploads/2017/10/Versistack-full-color.png
+.. image:: https://www.veristack.com/wp-content/uploads/2017/10/Versistack-full-color.png
    :alt: Veristack
 
 Summary
