@@ -19,7 +19,7 @@ setup(
     author_email='btimby@smartfile.com',
     url='https://veristack.com/',
     platforms='OS Independent',
-    packages=find_packages(),
+    py_modules=['cert'],
     package_data={
         '': ['README.rst', 'requirements.txt']
     },

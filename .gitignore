@@ -101,3 +101,5 @@ output-ubuntu-16.10-amd64-virtualbox-iso
 .vscode/
 
 *.egg-info
+
+dist/*
