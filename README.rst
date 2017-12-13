@@ -1,10 +1,14 @@
-Cert
+.. image:: https://veristack.com/wp-content/uploads/2017/10/Versistack-full-color.png
+   :alt: Veristack
+
+Summary
 ===========
 
-Cert is a python interface for reading or issuing certifications.
+Cert is a python interface for workign with SSL certificates.
 
 
-Install/Develop
+Development
 -----------
 
     make develop
+
