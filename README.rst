@@ -1,4 +1,4 @@
-.. image:: https://github.com/Veristack/cert/blob/self-signed/imgs/veristack-logo.png
+.. image:: https://github.com/Veristack/cert/blob/master/imgs/veristack-logo.png
    :alt: Veristack
 
 Summary
