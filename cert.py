@@ -127,14 +127,14 @@ def certificate(country, state, city, org, org_name, common, ca_cert=False):
                        critical=False)
 
     if ca_cert:
-        cert.add_extension(
+        cert = cert.add_extension(
             x509.BasicConstraints(
                 ca=True,
                 path_length=1
             ),
             critical=True
         )
-    cert.sign(key, hashes.SHA256(), default_backend())
+    cert = cert.sign(key, hashes.SHA256(), default_backend())
 
     return (key, cert), write_cert(key, cert, True)
 
@@ -147,7 +147,7 @@ def ss_certificate(country, state, city, org, org_name, common):
     certificate is also used to sign an SSL server certificate for the web
     interface.
     """
-    certificate(country, state, city, org, org_name, common, ca_cert=False)
+    return certificate(country, state, city, org, org_name, common, ca_cert=False)
 
 
 def ca_certificate(country, state, city, org, org_name, common):
@@ -158,7 +158,7 @@ def ca_certificate(country, state, city, org, org_name, common):
     is also used to sign an SSL server certificate for the proxy web interface.
     This leverages the trust that must be in place for the ca certificate.
     """
-    certificate(country, state, city, org, org_name, common, ca_cert=True)
+    return certificate(country, state, city, org, org_name, common, ca_cert=True)
 
 
 def server_certificate(ca_key, ca_cert, common=None):
