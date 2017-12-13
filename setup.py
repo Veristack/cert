@@ -12,7 +12,7 @@ required = [r for r in required if not r.startswith('git')]
 
 setup(
     name='cert',
-    version='1.0',
+    version='0.2',
     install_requires=required,
     description='A framework for reading and writing certs.',
     author='Ben Timby',

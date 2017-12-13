@@ -14,50 +14,6 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 
-def write_cert(key, cert, der=True):
-    """
-    Writes the private key and certificate to disk.
-
-    Writes the private key in PEM format to a temporary file. If cert is
-    provided it is written to the well-known path SQUID_PUB_PATH.
-    """
-    # This file contains the whole certificate, and is loaded into squid.
-    with tempfile.NamedTemporaryFile(delete=False) as k:
-        LOGGER.debug('Writing PEM encoded key to %s', k.name)
-        k.write(key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            # TODO: squid can support a passphrase using sslpassword_program
-            # config, but we would need to modify the config template and
-            # generate as script to provide the passphrase. I am not sure how
-            # secure that would be.
-            encryption_algorithm=serialization.NoEncryption()
-        ))
-        k.write(b'\n')
-        LOGGER.debug('Writing PEM encoded certificate to %s', k.name)
-        k.write(cert.public_bytes(serialization.Encoding.PEM))
-        k.write(b'\n')
-    with tempfile.NamedTemporaryFile(delete=False) as c:
-        LOGGER.debug('Writing PEM encoded certificate to %s', c.name)
-        c.write(cert.public_bytes(serialization.Encoding.PEM))
-        c.write(b'\n')
-
-    files = [k.name, c.name]
-
-    # If der is True, we write the public portion in DER format to another
-    # file. This file is in a well-known location that can be exported by C3
-    # directly to end-user browsers (to import into their certificate store).
-    if der:
-        # This file is presented for download, so that users can trust the
-        # cert.
-        with tempfile.NamedTemporaryFile(delete=False) as d:
-            LOGGER.debug('Writing DER encoded certificate to %s', d.name)
-            d.write(cert.public_bytes(serialization.Encoding.DER))
-        files.append(d.name)
-
-    return files
-
-
 def load_certificate(f, passphrase=None):
     """
     Ensure we can load the public and private keys from the given file.
@@ -97,11 +53,31 @@ def load_certificate(f, passphrase=None):
         LOGGER.debug('Extension: %s', a)
     LOGGER.debug('-------------------')
 
-    return (key, cert), write_cert(key, cert, True)
+    return key, cert
+
+
+def save_key(fobj, key, format='key'):
+    """Save a key file."""
+    LOGGER.debug('Writing PEM encoded key to %s', fobj.name)
+    fobj.write(
+        key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+    )
+    fobj.write(b'\n')
+
+
+def save_cert(fobj, cert, format='pem'):
+    """Save a cert."""
+    LOGGER.debug('Writing PEM encoded certificate to %s', fobj.name)
+    fobj.write(cert.public_bytes(serialization.Encoding.PEM))
+    fobj.write(b'\n')
 
 
 def certificate(country, state, city, org, org_name, common, ca_cert=False):
-    """Generate a certificate."""
+    """Generate a key and certificate."""
     key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
@@ -136,12 +112,12 @@ def certificate(country, state, city, org, org_name, common, ca_cert=False):
         )
     cert = cert.sign(key, hashes.SHA256(), default_backend())
 
-    return (key, cert), write_cert(key, cert, True)
+    return key, cert
 
 
 def ss_certificate(country, state, city, org, org_name, common):
     """
-    Generate a self signed certificate.
+    Generate a self signed key + certificate.
 
     Creates a self signed cert for the proxy to use when bumping SSL. This
     certificate is also used to sign an SSL server certificate for the web
@@ -152,7 +128,7 @@ def ss_certificate(country, state, city, org, org_name, common):
 
 def ca_certificate(country, state, city, org, org_name, common):
     """
-    Generate a certificate authority certificate.
+    Generate a key + certificate authority certificate.
 
     Creates a CA cert for the proxy to use when bumping SSL. This certificate
     is also used to sign an SSL server certificate for the proxy web interface.
@@ -210,4 +186,4 @@ def server_certificate(ca_key, ca_cert, common=None):
                        critical=False)\
         .sign(ca_key, hashes.SHA256(), default_backend())
 
-    return (key, cert), write_cert(key, cert)
+    return key, cert
