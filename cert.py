@@ -56,6 +56,9 @@ def load_certificate(f, passphrase=None):
     return key, cert
 
 
+# DISK SAVING
+
+
 def save_key(fobj, key, format='key'):
     """Save a key file."""
     LOGGER.debug('Writing PEM encoded key to %s', fobj.name)
@@ -76,13 +79,29 @@ def save_cert(fobj, cert, format='pem'):
     fobj.write(b'\n')
 
 
-def certificate(country, state, city, org, org_name, common, ca_cert=False):
-    """Generate a key and certificate."""
-    key = rsa.generate_private_key(
+def save_csr(fobj, csr, format='pem'):
+    """Save a csr."""
+    LOGGER.debug('Writing PEM encoded CSR to %s', fobj.name)
+    fobj.write(csr.public_bytes(serialization.Encoding.PEM))
+    fobj.write(b'\n')
+
+
+# CERTIFICATE GENERATION
+
+
+def private_key():
+    """Generates a private key."""
+    return rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
         backend=default_backend()
     )
+
+
+def certificate(country, state, city, org, org_name, common, ca_cert=False):
+    """Generate a certificate."""
+    key = private_key()
+
     # Create certificate and sign it.
     subject = issuer = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, country),
@@ -187,3 +206,35 @@ def server_certificate(ca_key, ca_cert, common=None):
         .sign(ca_key, hashes.SHA256(), default_backend())
 
     return key, cert
+
+
+# CERTIFICATE SIGNING REQUEST GENERATION
+
+
+def certificate_signing_request(country, state, city, org, org_name, common):
+    """
+    Generates a CSR that is based on the passed in key.
+
+    Returns a private key and a CSR.
+    """
+
+    key = private_key()
+
+    # Generate a CSR.
+    csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
+                # Pass in the callers attributes.
+                x509.NameAttribute(NameOID.COUNTRY_NAME, country),
+                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, state),
+                x509.NameAttribute(NameOID.LOCALITY_NAME, city),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, org),
+                x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, org_name),
+                x509.NameAttribute(NameOID.COMMON_NAME, common),
+            ])).add_extension(
+                x509.SubjectAlternativeName([
+                    x509.DNSName(common),
+                ]),
+                critical=False,
+            )
+
+    # Sign CSR with our private key and return it.
+    return key, csr.sign(key, hashes.SHA256(), default_backend())
