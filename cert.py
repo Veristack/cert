@@ -1,6 +1,6 @@
 import tempfile
 import logging
-
+from collections import namedtuple
 from datetime import datetime, timedelta
 
 from cryptography import x509
@@ -12,6 +12,16 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
+
+
+CertAttributes = namedtuple('CertAttributes', [
+    'country',
+    'state',
+    'city',
+    'org',
+    'org_name',
+    'common'
+])
 
 
 def load_certificate(f, passphrase=None):
@@ -98,18 +108,19 @@ def private_key():
     )
 
 
-def certificate(country, state, city, org, org_name, common, ca_cert=False):
+def certificate(certattrs, ca_cert=False):
     """Generate a certificate."""
     key = private_key()
 
     # Create certificate and sign it.
     subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, country),
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, state),
-        x509.NameAttribute(NameOID.LOCALITY_NAME, city),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, org),
-        x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, org_name),
-        x509.NameAttribute(NameOID.COMMON_NAME, common),
+        x509.NameAttribute(NameOID.COUNTRY_NAME, certattrs.country),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, certattrs.state),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, certattrs.city),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, certattrs.org),
+        x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME,
+                           certattrs.org_name),
+        x509.NameAttribute(NameOID.COMMON_NAME, certattrs.common),
     ])
     cert = x509.CertificateBuilder()\
         .subject_name(subject)\
@@ -118,8 +129,10 @@ def certificate(country, state, city, org, org_name, common, ca_cert=False):
         .serial_number(x509.random_serial_number())\
         .not_valid_before(datetime.utcnow())\
         .not_valid_after(datetime.utcnow() + timedelta(days=3650))\
-        .add_extension(x509.SubjectAlternativeName([x509.DNSName(common)]),
-                       critical=False)
+        .add_extension(
+            x509.SubjectAlternativeName([x509.DNSName(certattrs.common)]),
+            critical=False
+        )
 
     if ca_cert:
         cert = cert.add_extension(
@@ -134,7 +147,7 @@ def certificate(country, state, city, org, org_name, common, ca_cert=False):
     return key, cert
 
 
-def ss_certificate(country, state, city, org, org_name, common):
+def ss_certificate(certattrs):
     """
     Generate a self signed key + certificate.
 
@@ -142,10 +155,10 @@ def ss_certificate(country, state, city, org, org_name, common):
     certificate is also used to sign an SSL server certificate for the web
     interface.
     """
-    return certificate(country, state, city, org, org_name, common, ca_cert=False)
+    return certificate(certattrs, ca_cert=False)
 
 
-def ca_certificate(country, state, city, org, org_name, common):
+def ca_certificate(certattrs):
     """
     Generate a key + certificate authority certificate.
 
@@ -153,7 +166,7 @@ def ca_certificate(country, state, city, org, org_name, common):
     is also used to sign an SSL server certificate for the proxy web interface.
     This leverages the trust that must be in place for the ca certificate.
     """
-    return certificate(country, state, city, org, org_name, common, ca_cert=True)
+    return certificate(certattrs, ca_cert=True)
 
 
 def server_certificate(ca_key, ca_cert, common=None):
@@ -211,7 +224,7 @@ def server_certificate(ca_key, ca_cert, common=None):
 # CERTIFICATE SIGNING REQUEST GENERATION
 
 
-def certificate_signing_request(country, state, city, org, org_name, common):
+def certificate_signing_request(certattrs):
     """
     Generates a CSR that is based on the passed in key.
 
@@ -223,15 +236,17 @@ def certificate_signing_request(country, state, city, org, org_name, common):
     # Generate a CSR.
     csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
                 # Pass in the callers attributes.
-                x509.NameAttribute(NameOID.COUNTRY_NAME, country),
-                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, state),
-                x509.NameAttribute(NameOID.LOCALITY_NAME, city),
-                x509.NameAttribute(NameOID.ORGANIZATION_NAME, org),
-                x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, org_name),
-                x509.NameAttribute(NameOID.COMMON_NAME, common),
+                x509.NameAttribute(NameOID.COUNTRY_NAME, certattrs.country),
+                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME,
+                                   certattrs.state),
+                x509.NameAttribute(NameOID.LOCALITY_NAME, certattrs.city),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, certattrs.org),
+                x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME,
+                                   certattrs.org_name),
+                x509.NameAttribute(NameOID.COMMON_NAME, certattrs.common),
             ])).add_extension(
                 x509.SubjectAlternativeName([
-                    x509.DNSName(common),
+                    x509.DNSName(certattrs.common),
                 ]),
                 critical=False,
             )
