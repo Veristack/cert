@@ -89,13 +89,19 @@ def save_csr(fobj, csr, format='pem'):
 # CERTIFICATE GENERATION
 
 
-def certificate(country, state, city, org, org_name, common, ca_cert=False):
-    """Generate a key and certificate."""
-    key = rsa.generate_private_key(
+def private_key():
+    """Generates a private key."""
+    return rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
         backend=default_backend()
     )
+
+
+def certificate(country, state, city, org, org_name, common, ca_cert=False):
+    """Generate a certificate."""
+    key = private_key()
+
     # Create certificate and sign it.
     subject = issuer = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, country),
@@ -205,14 +211,14 @@ def server_certificate(ca_key, ca_cert, common=None):
 # CERTIFICATE SIGNING REQUEST GENERATION
 
 
-def certificate_signing_request(key, country, state, city, org, org_name, common):
+def certificate_signing_request(country, state, city, org, org_name, common):
     """
     Generates a CSR that is based on the passed in key.
+
+    Returns a private key and a CSR.
     """
 
-    if not key:
-        # Generate private key here.
-        key, crt = ss_certificate(country, state, city, org, org_name, common)
+    key = private_key()
 
     # Generate a CSR.
     csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
@@ -231,4 +237,4 @@ def certificate_signing_request(key, country, state, city, org, org_name, common
             )
 
     # Sign CSR with our private key and return it.
-    return csr.sign(key, hashes.SHA256(), default_backend())
+    return key, csr.sign(key, hashes.SHA256(), default_backend())
