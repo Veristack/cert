@@ -79,7 +79,7 @@ def save_cert(fobj, cert, format='pem'):
     fobj.write(b'\n')
 
 
-def save_crs(fobj, csr, format='pem'):
+def save_csr(fobj, csr, format='pem'):
     """Save a csr."""
     LOGGER.debug('Writing PEM encoded CSR to %s', fobj.name)
     fobj.write(csr.public_bytes(serialization.Encoding.PEM))
