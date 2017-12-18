@@ -24,20 +24,26 @@ CertAttributes = namedtuple('CertAttributes', [
 ])
 
 
-def load_certificate(f, passphrase=None):
+def load_certificate(cert, key=None, passphrase=None):
     """
     Ensure we can load the public and private keys from the given file.
 
     Then write them back out without a passphrase.
     """
     passphrase = passphrase if passphrase else None
+
     try:
-        cert_data = f.read()
+        if key:
+            key_data = key.read()
+            cert_data = cert.read()
+        else:
+            key_data = cert.read()
+            cert_data = key_data
     except Exception as e:
         raise IOError('Error reading certificate file: %s' % str(e))
     try:
         key = serialization.load_pem_private_key(
-            cert_data,
+            key_data,
             passphrase,
             default_backend()
         )
