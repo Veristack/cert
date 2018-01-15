@@ -127,6 +127,9 @@ class Cert():
 
     def save_key(fobj, key, format='key'):
         """Save a key file."""
+        if format != 'key':
+            raise NotImplementedError(
+                '%s format unsupported, use .key' % format)
         LOGGER.debug('Writing PEM encoded key to %s', fobj.name)
         fobj.write(
             key.private_bytes(
@@ -139,12 +142,18 @@ class Cert():
 
     def save_cert(fobj, cert, format='pem'):
         """Save a cert."""
+        if format != 'pem':
+            raise NotImplementedError(
+                '%s format unsupported, use .pem' % format)
         LOGGER.debug('Writing PEM encoded certificate to %s', fobj.name)
         fobj.write(cert.public_bytes(serialization.Encoding.PEM))
         fobj.write(b'\n')
 
     def save_csr(fobj, csr, format='pem'):
         """Save a csr."""
+        if format != 'pem':
+            raise NotImplementedError(
+                '%s format unsupported, use .pem' % format)
         LOGGER.debug('Writing PEM encoded CSR to %s', fobj.name)
         fobj.write(csr.public_bytes(serialization.Encoding.PEM))
         fobj.write(b'\n')
