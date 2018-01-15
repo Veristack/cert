@@ -38,11 +38,14 @@ class CertAttributes(namedtuple('CertAttributes', [
 class Cert():
     """Cert class helps in the generation of SSL certificates."""
 
-    def __init__(self, attributes=None):
+    def __init__(self, attributes=None, private_key=None):
 
         # Accept the attributes that define the certs.
         if attributes:
             self.attributes = attributes
+
+        if private_key:
+            self.private_key = private_key
 
     def _private_key():
         """Generates a private key."""
@@ -52,12 +55,15 @@ class Cert():
             backend=default_backend()
         )
 
-    def _certificate(self, certattrs, ca_cert=False):
+    def _certificate(self, certattrs, ca_cert=False, self_sign=True):
         """Generate a certificate."""
         if not certattrs:
             certattrs = self.attributes
 
-        key = self._private_key()
+        if self_sign:
+            key = self._private_key()
+        else:
+            key = self.private_key
 
         # Create certificate and sign it.
         subject = issuer = certattrs.to_x509()
@@ -88,7 +94,7 @@ class Cert():
     def gen_self_signed_cert(self):
         """Generates a self signed cert."""
 
-        return self._certificate(self.attributes)
+        return self._certificate(self.attributes, self_sign=True)
 
     def gen_ca_cert(self):
         """
