@@ -12,14 +12,27 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
-CertAttributes = namedtuple('CertAttributes', [
+
+class CertAttributes(namedtuple('CertAttributes', [
     'country',
     'state',
     'city',
     'org',
     'org_name',
     'common'
-])
+])):
+    def to_x509(self):
+        """Convert this namedtuple to an x509 named object."""
+        return x509.Name([
+            x509.NameAttribute(NameOID.COUNTRY_NAME, self.country),
+            x509.NameAttribute(
+                NameOID.STATE_OR_PROVINCE_NAME, self.state),
+            x509.NameAttribute(NameOID.LOCALITY_NAME, self.city),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, self.org),
+            x509.NameAttribute(
+                NameOID.ORGANIZATIONAL_UNIT_NAME, self.org_name),
+            x509.NameAttribute(NameOID.COMMON_NAME, self.common),
+        ])
 
 
 class Cert():
@@ -47,16 +60,7 @@ class Cert():
         key = self._private_key()
 
         # Create certificate and sign it.
-        subject = issuer = x509.Name([
-            x509.NameAttribute(NameOID.COUNTRY_NAME, certattrs.country),
-            x509.NameAttribute(
-                NameOID.STATE_OR_PROVINCE_NAME, certattrs.state),
-            x509.NameAttribute(NameOID.LOCALITY_NAME, certattrs.city),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, certattrs.org),
-            x509.NameAttribute(
-                NameOID.ORGANIZATIONAL_UNIT_NAME, certattrs.org_name),
-            x509.NameAttribute(NameOID.COMMON_NAME, certattrs.common),
-        ])
+        subject = issuer = certattrs.to_x509()
         cert = x509.CertificateBuilder()\
             .subject_name(subject)\
             .issuer_name(issuer)\
@@ -107,24 +111,14 @@ class Cert():
         key = self.private_key()
 
         # Generate a CSR.
-        csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
-                    # Pass in the callers attributes.
-                    x509.NameAttribute(
-                        NameOID.COUNTRY_NAME, certattrs.country),
-                    x509.NameAttribute(
-                        NameOID.STATE_OR_PROVINCE_NAME, certattrs.state),
-                    x509.NameAttribute(NameOID.LOCALITY_NAME, certattrs.city),
-                    x509.NameAttribute(
-                        NameOID.ORGANIZATION_NAME, certattrs.org),
-                    x509.NameAttribute(
-                        NameOID.ORGANIZATIONAL_UNIT_NAME, certattrs.org_name),
-                    x509.NameAttribute(NameOID.COMMON_NAME, certattrs.common),
-                ])).add_extension(
-                    x509.SubjectAlternativeName([
-                        x509.DNSName(certattrs.common),
-                    ]),
-                    critical=False,
-                )
+        csr = x509.CertificateSigningRequestBuilder().subject_name(
+            certattrs.to_x509()
+        ).add_extension(
+            x509.SubjectAlternativeName([
+                x509.DNSName(certattrs.common),
+            ]),
+            critical=False,
+        )
 
         # Sign CSR with our private key and return it.
         return key, csr.sign(key, hashes.SHA256(), default_backend())
@@ -154,4 +148,3 @@ class Cert():
         LOGGER.debug('Writing PEM encoded CSR to %s', fobj.name)
         fobj.write(csr.public_bytes(serialization.Encoding.PEM))
         fobj.write(b'\n')
-
