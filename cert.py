@@ -8,6 +8,7 @@ from cryptography.x509.oid import NameOID
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
+import pem
 
 
 LOGGER = logging.getLogger(__name__)
@@ -49,15 +50,22 @@ def load_certificate(cert, key=None, passphrase=None):
         )
     except Exception as e:
         raise Exception('Error loading key from certificate file: %s' % str(e))
+    certs = []
     try:
-        cert = x509.load_pem_x509_certificate(cert_data, default_backend())
+        cert_components = pem.parse(cert_data)
+        for cert_component in cert_components:
+            if isinstance(cert_component, pem.Certificate):
+                cert_obj = x509.load_pem_x509_certificate(
+                    bytes(str(cert_component), 'utf-8'), default_backend())
+                certs.append(cert_obj)
     except Exception as e:
         raise Exception('Error loading certificate file: %s' % str(e))
     # Validate the datetimes.
-    assert cert.not_valid_before < datetime.utcnow(), \
-           'Certificate not valid before %s' % cert.not_valid_before
-    assert cert.not_valid_after > datetime.utcnow(), \
-           'Certificate expired %s' % cert.not_valid_after
+    for cert in certs:
+        assert cert.not_valid_before < datetime.utcnow(), \
+            'Certificate not valid before %s' % cert.not_valid_before
+        assert cert.not_valid_after > datetime.utcnow(), \
+            'Certificate expired %s' % cert.not_valid_after
     # TODO: validate that the file contains intermediaries too!
     LOGGER.debug('Certificate details')
     LOGGER.debug('-------------------')
@@ -69,7 +77,7 @@ def load_certificate(cert, key=None, passphrase=None):
         LOGGER.debug('Extension: %s', a)
     LOGGER.debug('-------------------')
 
-    return key, cert
+    return key, certs
 
 
 # DISK SAVING
